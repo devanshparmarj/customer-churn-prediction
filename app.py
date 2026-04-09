@@ -1,654 +1,143 @@
 import streamlit as st
 import streamlit.components.v1 as components
-st.set_page_config(layout="wide", page_title="Customer Success Analytics", page_icon="⚡", initial_sidebar_state="collapsed")
 
-st.markdown("""
-<style>
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .block-container {
-        padding: 0 !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-    }
-    iframe {
-        width: 100vw;
-        border: none;
-        display: block;
-    }
-    body { margin: 0; }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(layout="wide")
 
-# ══════════════════════════════════════════════════════════════
-#  🔧  ONLY LINE YOU NEED TO CHANGE:
-#  Replace the URL below with your actual Render URL
-#  Example: "https://customer-churn-api.onrender.com"
-# ══════════════════════════════════════════════════════════════
-RENDER_URL = "https://customer-churn-prediction-4gs9.onrender.com"
-# ══════════════════════════════════════════════════════════════
+# 👉 PUT YOUR REAL BACKEND URL HERE
+RENDER_URL = "https://customer-churn-prediction-3-42s7.onrender.com/"
 
-custom_app_html = f"""
+components.html(f"""
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Customer Success Analytics</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<title>Customer Churn</title>
 <style>
-    :root {{
-        --bg-color: #0a0d14;
-        --card-bg: #0f1117;
-        --accent: #7c3aed;
-        --border-color: #ffffff0a;
-        --text-muted: #64748b;
-        --high-risk: #ef4444;
-        --medium-risk: #f59e0b;
-        --low-risk: #10b981;
-    }}
-
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    
-    body {{
-        font-family: 'DM Sans', sans-serif;
-        background-color: var(--bg-color);
-        background-image: radial-gradient(ellipse 80% 50% at 50% -10%, #1a1040, transparent);
-        background-repeat: no-repeat;
-        color: #fff;
-        min-height: 100vh;
-        overflow-x: hidden;
-        opacity: 0;
-        animation: fadeIn 0.5s ease forwards;
-    }}
-
-    @keyframes fadeIn {{ to {{ opacity: 1; }} }}
-
-    h1, h2, h3, .syne {{ font-family: 'Syne', sans-serif; }}
-    .label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; display: block; }}
-    
-    header {{
-        position: sticky; top: 0; z-index: 100;
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid var(--border-color);
-        padding: 16px 32px;
-        display: flex; justify-content: space-between; align-items: center;
-    }}
-    .header-left {{ display: flex; align-items: center; gap: 16px; }}
-    .logo-icon {{
-        background: linear-gradient(135deg, var(--accent), #4f46e5);
-        width: 40px; height: 40px; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; box-shadow: 0 0 20px #7c3aed66;
-    }}
-    .app-title {{ font-weight: 700; font-size: 20px; line-height: 1.2; }}
-    .app-subtitle {{ font-size: 10px; color: var(--text-muted); font-weight: 700; letter-spacing: 1.5px; }}
-    .status-badge {{
-        display: flex; align-items: center; gap: 8px;
-        background: #10b9811a; border: 1px solid #10b98133; padding: 6px 12px; border-radius: 20px;
-        font-size: 12px; font-weight: 600; color: #10b981;
-    }}
-    .status-dot {{ width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }}
-    @keyframes pulse {{ 0% {{ box-shadow: 0 0 0 0 #10b98180; }} 70% {{ box-shadow: 0 0 0 6px #10b98100; }} 100% {{ box-shadow: 0 0 0 0 #10b98100; }} }}
-
-    .container {{
-        display: grid; grid-template-columns: 380px 1fr; gap: 24px;
-        max-width: 1320px; margin: 32px auto; padding: 0 32px;
-    }}
-    
-    .card {{
-        background: var(--card-bg); border: 1px solid var(--border-color);
-        border-radius: 16px; padding: 24px;
-        box-shadow: 0 4px 32px #00000040;
-        transition: transform 0.3s ease, background 0.5s ease, border 0.5s ease, box-shadow 0.5s ease;
-    }}
-    
-    .input-group {{ margin-bottom: 16px; }}
-    
-    .stepper {{
-        display: flex; align-items: center;
-        background: #161925; border: 1px solid var(--border-color); border-radius: 8px;
-        overflow: hidden; height: 40px;
-    }}
-    .stepper button {{
-        background: transparent; border: none; color: #fff; width: 40px; height: 100%;
-        font-size: 18px; cursor: pointer; transition: background 0.2s;
-    }}
-    .stepper button:hover {{ background: #ffffff0a; }}
-    .stepper input {{
-        flex: 1; background: transparent; border: none; color: #fff;
-        text-align: center; font-size: 15px; font-weight: 500; font-family: 'DM Sans';
-        -moz-appearance: textfield; height: 100%; width: 100%;
-    }}
-    .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button {{ -webkit-appearance: none; margin: 0; }}
-    
-    select {{
-        width: 100%; height: 40px; background: #0a0d14; border: 1px solid #ffffff10;
-        border-radius: 8px; color: #fff; padding: 0 12px; appearance: none;
-        font-family: 'DM Sans'; font-size: 15px; cursor: pointer; outline: none;
-    }}
-    select option {{ background: #0f1117; }}
-    .select-wrapper {{ position: relative; }}
-    .select-wrapper::after {{
-        content: "▼"; position: absolute; right: 14px; top: 12px; font-size: 10px; color: #64748b; pointer-events: none;
-    }}
-    
-    .btn-primary {{
-        width: 100%; background: linear-gradient(135deg, var(--accent), #4f46e5); color: #fff;
-        border: none; border-radius: 8px; padding: 14px; font-family: 'Syne'; font-weight: 700; font-size: 16px;
-        cursor: pointer; box-shadow: 0 0 32px #7c3aed44; transition: all 0.3s ease;
-        display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px;
-    }}
-    .btn-primary:hover {{ filter: brightness(1.1); transform: scale(1.02); }}
-    
-    .loader {{
-        width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%;
-        border-top-color: #fff; animation: spin 1s linear infinite; display: none;
-    }}
-    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
-
-    .error-box {{
-        background: #f59e0b1a; border: 1px solid #f59e0b40; color: #f59e0b;
-        padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 16px;
-        display: none; align-items: center; justify-content: center; gap: 8px; text-align: center;
-    }}
-
-    .kpi-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }}
-    .kpi-card {{ background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-align: center; }}
-    .kpi-val {{ font-family: 'Syne'; font-weight: 800; font-size: 22px; margin-bottom: 4px; }}
-    
-    .right-panel {{ display: flex; flex-direction: column; gap: 20px; }}
-
-    #result-card {{ display: flex; flex-direction: column; gap: 20px; min-height: 380px; justify-content: center; }}
-    .result-empty {{ text-align: center; color: var(--text-muted); font-size: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; }}
-    .result-content {{ display: none; }}
-    .result-header {{ display: flex; justify-content: space-between; align-items: center; }}
-    .result-title {{ font-family: 'Syne'; font-weight: 700; font-size: 18px; border-left: 3px solid; padding-left: 12px; display: flex; align-items: center; }}
-    .risk-badge {{ font-family: 'Syne'; font-weight: 800; font-size: 13px; padding: 6px 16px; border-radius: 20px; letter-spacing: 0.5px; border: 1px solid; }}
-    .result-main {{ display: grid; grid-template-columns: 180px 1fr; gap: 32px; align-items: center; margin-top: 10px; }}
-    
-    .gauge {{ width: 180px; height: 180px; position: relative; }}
-    .gauge svg {{ transform: rotate(-90deg); width: 100%; height: 100%; }}
-    .gauge-bg {{ fill: none; stroke: #ffffff08; stroke-width: 12; }}
-    .gauge-arc {{ fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1); }}
-    .gauge-glow {{ filter: url(#glow); }}
-    .gauge-text {{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
-    .gauge-percent {{ font-family: 'Syne'; font-weight: 800; font-size: 32px; line-height: 1; }}
-    .gauge-label {{ font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; }}
-
-    .pred-detail h2 {{ font-size: 28px; font-weight: 800; margin-bottom: 8px; }}
-    .pred-desc {{ color: #94a3b8; font-size: 14px; margin-bottom: 16px; line-height: 1.5; }}
-    .summary-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-    .chip {{ background: #ffffff0a; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #cbd5e1; }}
-
-    .strategy-card {{ margin-top: 24px; padding: 16px; border-radius: 12px; background: rgba(0,0,0,0.2); }}
-    .strategy-title {{ font-weight: 700; font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }}
-    .strategy-pills {{ display: flex; flex-direction: column; gap: 8px; }}
-    .step-pill {{ background: #ffffff0a; padding: 8px 12px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 8px; }}
-    .step-pill::before {{ content: "•"; font-weight: bold; }}
-
-    .analytics-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
-    .chart-container {{ display: flex; flex-direction: column; gap: 16px; position: relative; }}
-    
-    .bar-chart {{ display: flex; align-items: flex-end; justify-content: space-around; height: 160px; margin-top: 20px; }}
-    .bar-col {{ display: flex; flex-direction: column; align-items: center; gap: 8px; width: 60px; }}
-    .bar-val {{ font-weight: 700; font-family: 'Syne'; font-size: 14px; }}
-    .bar {{ width: 40px; border-radius: 6px 6px 0 0; transform-origin: bottom; transform: scaleY(0); transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1); text-align: center; }}
-    .bar-label {{ font-size: 11px; color: var(--text-muted); font-weight: 600; text-align: center; }}
-    
-    .donut-widget {{ display: flex; align-items: center; gap: 24px; margin-top: 10px; }}
-    .donut-svg {{ width: 120px; height: 120px; transform: rotate(-90deg); }}
-    .donut-bg {{ fill: none; stroke: #10b981; stroke-width: 24; }}
-    .donut-seg {{ fill: none; stroke: #ef4444; stroke-width: 24; stroke-dasharray: 314; stroke-dashoffset: 314; transition: stroke-dashoffset 1.5s ease-out; }}
-    .donut-details {{ flex: 1; }}
-    .d-row {{ margin-bottom: 12px; }}
-    .d-top {{ display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 4px; }}
-    .d-bar-bg {{ height: 6px; background: #ffffff0a; border-radius: 3px; overflow: hidden; }}
-    .d-bar-fill {{ height: 100%; border-radius: 3px; width: 0; transition: width 1.5s ease-out; }}
-    .stat-box {{ margin-top: 16px; background: #ef44441a; border: 1px solid #ef444433; padding: 12px; border-radius: 8px; text-align: center; }}
-
-    .risk-high-text {{ color: var(--high-risk); }}
-    .risk-medium-text {{ color: var(--medium-risk); }}
-    .risk-low-text {{ color: var(--low-risk); }}
-
-    /* Wake-up notice for Render free tier cold starts */
-    .wake-notice {{
-        background: #7c3aed1a; border: 1px solid #7c3aed40; color: #a78bfa;
-        padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
-        margin-top: 12px; display: none; text-align: center;
-    }}
+body {{
+    font-family: Arial;
+    background: #0a0d14;
+    color: white;
+    padding: 40px;
+}}
+input, select {{
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #111;
+    color: white;
+    border: 1px solid #333;
+}}
+button {{
+    padding: 12px;
+    width: 100%;
+    background: #7c3aed;
+    color: white;
+    border: none;
+    cursor: pointer;
+}}
+.result {{
+    margin-top: 20px;
+    padding: 15px;
+    background: #111;
+}}
 </style>
 </head>
+
 <body>
 
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-</svg>
+<h2>Customer Churn Prediction</h2>
 
-<header>
-    <div class="header-left">
-        <div class="logo-icon">⚡</div>
-        <div>
-            <div class="app-title syne">Customer Success Analytics</div>
-            <div class="app-subtitle">ML CHURN INTELLIGENCE PLATFORM</div>
-        </div>
-    </div>
-    <div class="status-badge">
-        <div class="status-dot"></div>
-        Model Active · RF Classifier v2.0
-    </div>
-</header>
+<label>Tenure</label>
+<input id="tenure" type="number" value="12">
 
-<div class="container">
-    <!-- LEFT PANEL -->
-    <div class="left-panel">
-        <div class="card">
-            <div class="input-group">
-                <span class="label">TENURE (MONTHS)</span>
-                <div class="stepper">
-                    <button type="button" onclick="step('tenure', -1)">−</button>
-                    <input type="number" id="tenure" value="12" min="0" max="120">
-                    <button type="button" onclick="step('tenure', 1)">+</button>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">MONTHLY CHARGES ($)</span>
-                <div class="stepper">
-                    <button type="button" onclick="step('charges', -0.5)">−</button>
-                    <input type="number" id="charges" value="65.00" min="0" max="500" step="0.5">
-                    <button type="button" onclick="step('charges', 0.5)">+</button>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">TOTAL CHARGES ($)</span>
-                <div class="stepper">
-                    <button type="button" onclick="step('total_charges', -10)">−</button>
-                    <input type="number" id="total_charges" value="780.00" min="0" max="99999" step="10">
-                    <button type="button" onclick="step('total_charges', 10)">+</button>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">RECENT SUPPORT CALLS</span>
-                <div class="stepper">
-                    <button type="button" onclick="step('calls', -1)">−</button>
-                    <input type="number" id="calls" value="1" min="0" max="50">
-                    <button type="button" onclick="step('calls', 1)">+</button>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">CONTRACT TYPE</span>
-                <div class="select-wrapper">
-                    <select id="contract">
-                        <option>Month-to-month</option>
-                        <option>One year</option>
-                        <option>Two year</option>
-                    </select>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">INTERNET SERVICE</span>
-                <div class="select-wrapper">
-                    <select id="internet">
-                        <option>DSL</option>
-                        <option>Fiber optic</option>
-                        <option>No</option>
-                    </select>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">PAYMENT METHOD</span>
-                <div class="select-wrapper">
-                    <select id="payment">
-                        <option>Credit card</option>
-                        <option>Bank transfer</option>
-                        <option>Electronic check</option>
-                        <option>Mailed check</option>
-                    </select>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div class="input-group">
-                    <span class="label">TECH SUPPORT</span>
-                    <div class="select-wrapper">
-                        <select id="tech_support">
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <span class="label">ONLINE SECURITY</span>
-                    <div class="select-wrapper">
-                        <select id="security">
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="input-group">
-                <span class="label">STREAMING SERVICES</span>
-                <div class="select-wrapper">
-                    <select id="streaming">
-                        <option>Yes</option>
-                        <option>No</option>
-                    </select>
-                </div>
-            </div>
-            <button class="btn-primary" id="predictBtn" onclick="runPrediction()">
-                <svg class="loader" id="btnLoader" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="#fff" stroke-dasharray="31.4 31.4" stroke-linecap="round"></circle></svg>
-                <span id="btnText">⚡ Predict Churn Risk</span>
-            </button>
-            <!-- Render cold-start warning -->
-            <div class="wake-notice" id="wakeNotice">
-                ⏳ Server waking up — first prediction may take 30–60 seconds…
-            </div>
-            <div class="error-box" id="errorBox">
-                ⚡ Backend offline — showing demo prediction
-            </div>
-        </div>
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-val" id="kpi-customers">0</div>
-                <div class="label" style="margin:0;">Total Customers</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val" id="kpi-rate">0.0%</div>
-                <div class="label" style="margin:0;">Avg Churn Rate</div>
-            </div>
-        </div>
-    </div>
+<label>Monthly Charges</label>
+<input id="charges" type="number" value="70">
 
-    <!-- RIGHT PANEL -->
-    <div class="right-panel">
-        <div class="card" id="result-card">
-            <div class="result-empty" id="res-empty">
-                <span style="font-size: 48px;">📊</span>
-                <span style="font-weight: 500;">Awaiting Customer Data</span>
-            </div>
-            <div class="result-content" id="res-content">
-                <div class="result-header">
-                    <div class="result-title" id="res-title" style="border-color: var(--accent);">Prediction Result</div>
-                    <div class="risk-badge" id="res-badge">HIGH RISK</div>
-                </div>
-                <div class="result-main">
-                    <div class="gauge">
-                        <svg viewBox="0 0 160 160">
-                            <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
-                            <circle class="gauge-arc gauge-glow" id="res-arc" cx="80" cy="80" r="70"></circle>
-                        </svg>
-                        <div class="gauge-text">
-                            <div class="gauge-percent" id="res-pct">0%</div>
-                            <div class="gauge-label">CHURN RISK</div>
-                        </div>
-                    </div>
-                    <div class="pred-detail">
-                        <h2 id="res-decision" class="syne">Will Churn</h2>
-                        <div class="pred-desc">
-                            Based on the behavioral profile, this customer has a <b style="color:white;" id="desc-prob">0%</b> likelihood of churning.
-                        </div>
-                        <div class="summary-chips">
-                            <div class="chip" id="chip-ten">Tenure: 12M</div>
-                            <div class="chip" id="chip-chg">$65/mo</div>
-                            <div class="chip" id="chip-tot">$780</div>
-                            <div class="chip" id="chip-cll">1 Call</div>
-                            <div class="chip" id="chip-ctr">M-to-M</div>
-                            <div class="chip" id="chip-pay">Credit card</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="strategy-card" id="res-strat">
-                    <div class="strategy-title" id="strat-title">🚨 Urgent Intervention Required</div>
-                    <div class="strategy-pills" id="strat-pills"></div>
-                </div>
-            </div>
-        </div>
-        <div class="analytics-row">
-            <div class="card chart-container">
-                <h3 style="font-size: 16px;">Avg Monthly Charges by Contract</h3>
-                <div class="bar-chart">
-                    <div class="bar-col">
-                        <span class="bar-val">$72.4</span>
-                        <div class="bar" style="height: 120px; background: linear-gradient(0deg, #7c3aed40, #7c3aed); box-shadow: 0 0 16px #7c3aed40;"></div>
-                        <span class="bar-label">Month-to-month</span>
-                    </div>
-                    <div class="bar-col">
-                        <span class="bar-val">$54.1</span>
-                        <div class="bar" style="height: 90px; background: linear-gradient(0deg, #0ea5e940, #0ea5e9); box-shadow: 0 0 16px #0ea5e940;"></div>
-                        <span class="bar-label">One Year</span>
-                    </div>
-                    <div class="bar-col">
-                        <span class="bar-val">$41.8</span>
-                        <div class="bar" style="height: 70px; background: linear-gradient(0deg, #10b98140, #10b981); box-shadow: 0 0 16px #10b98140;"></div>
-                        <span class="bar-label">Two Year</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card chart-container">
-                <h3 style="font-size: 16px;">Global Churn Distribution</h3>
-                <div class="donut-widget">
-                    <svg class="donut-svg" viewBox="0 0 100 100">
-                        <circle class="donut-bg" cx="50" cy="50" r="38"></circle>
-                        <circle class="donut-seg" id="anim-donut" cx="50" cy="50" r="38" stroke-dasharray="239"></circle>
-                    </svg>
-                    <div class="donut-details">
-                        <div class="d-row">
-                            <div class="d-top"><span style="color:#ef4444">Will Churn</span> <span>26.4%</span></div>
-                            <div class="d-bar-bg"><div class="d-bar-fill" id="anim-db1" style="background:#ef4444;"></div></div>
-                        </div>
-                        <div class="d-row">
-                            <div class="d-top"><span style="color:#10b981">Will Stay</span> <span>73.6%</span></div>
-                            <div class="d-bar-bg"><div class="d-bar-fill" id="anim-db2" style="background:#10b981;"></div></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-box">
-                    <span class="label" style="color:#f87171; letter-spacing: 2px; margin-bottom: 4px;">CUSTOMERS AT RISK</span>
-                    <div class="syne" style="font-size:24px; font-weight:800; color:#ef4444;" id="kpi-risk">0</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<label>Support Calls</label>
+<input id="calls" type="number" value="2">
+
+<label>Contract Type</label>
+<select id="contract">
+<option>Month-to-month</option>
+<option>One year</option>
+<option>Two year</option>
+</select>
+
+<label>Internet Service</label>
+<select id="internet">
+<option>DSL</option>
+<option>Fiber optic</option>
+<option>No</option>
+</select>
+
+<button onclick="predict()">Predict</button>
+
+<div id="result" class="result"></div>
 
 <script>
-    // ── The Render URL is injected from Python above ──
-    const BACKEND_URL = "{RENDER_URL}";
 
-    function step(id, val) {{
-        const el = document.getElementById(id);
-        const min = parseFloat(el.min);
-        const max = parseFloat(el.max);
-        const s = parseFloat(el.step) || 1;
-        let n = parseFloat(el.value) || 0;
-        n = Math.min(max, Math.max(min, n + val));
-        el.value = (Math.round(n * 2) / 2).toFixed(s === 0.5 ? 2 : (s === 10 ? 2 : 0));
-    }}
+const BACKEND_URL = "{RENDER_URL}";
 
-    function countUp(elId, target, duration, isPercent=false) {{
-        const el = document.getElementById(elId);
-        const startTime = performance.now();
-        function cubicOut(t) {{ return 1 - Math.pow(1 - t, 3); }}
-        function update(currentTime) {{
-            const progress = Math.min((currentTime - startTime) / duration, 1);
-            const current = target * cubicOut(progress);
-            el.innerText = isPercent ? current.toFixed(1) + "%" : Math.round(current).toLocaleString();
-            if(progress < 1) requestAnimationFrame(update);
-        }}
-        requestAnimationFrame(update);
-    }}
+async function predict() {{
 
-    window.onload = () => {{
-        countUp('kpi-customers', 14832, 1200);
-        countUp('kpi-rate', 26.4, 1200, true);
-        countUp('kpi-risk', 3915, 1200);
-        document.querySelectorAll('.bar').forEach(b => b.style.transform = 'scaleY(1)');
-        setTimeout(() => {{
-            document.getElementById('anim-donut').style.strokeDashoffset = "176";
-            document.getElementById('anim-db1').style.width = "26.4%";
-            document.getElementById('anim-db2').style.width = "73.6%";
-        }}, 100);
+    const tenure = parseInt(document.getElementById('tenure').value);
+    const charges = parseFloat(document.getElementById('charges').value);
+    const calls = parseInt(document.getElementById('calls').value);
+    const contract = document.getElementById('contract').value;
+    const internet = document.getElementById('internet').value;
+
+    const payload = {{
+        tenure: tenure,
+        monthly_charges: charges,
+        support_calls: calls,
+        contract_type: contract,
+        internet_service: internet
     }};
 
-    const uiCfg = {{
-        "High": {{
-            color: "#ef4444", class: "risk-high-text", label: "HIGH RISK", decision: "Will Churn",
-            stratTitle: "🚨 Urgent Intervention Required",
-            pills: ["Assign dedicated CSM immediately", "Offer 30% loyalty discount", "Schedule executive business review", "Enable premium support tier"]
-        }},
-        "Medium": {{
-            color: "#f59e0b", class: "risk-medium-text", label: "MEDIUM RISK", decision: "Will Stay",
-            stratTitle: "⚠️ Proactive Engagement Recommended",
-            pills: ["Send personalized check-in email", "Highlight unused premium features", "Offer annual plan incentive"]
-        }},
-        "Low": {{
-            color: "#10b981", class: "risk-low-text", label: "LOW RISK", decision: "Will Stay",
-            stratTitle: "✅ Healthy Relationship — Nurture",
-            pills: ["Include in referral program", "Invite to beta features", "Request case study participation"]
-        }}
-    }};
+    const resultBox = document.getElementById("result");
+    resultBox.innerHTML = "Loading...";
 
-    async function runPrediction() {{
-        const btnLoader = document.getElementById('btnLoader');
-        const btnText = document.getElementById('btnText');
-        const errBox = document.getElementById('errorBox');
-        const wakeNotice = document.getElementById('wakeNotice');
-        const predictBtn = document.getElementById('predictBtn');
+    try {{
+        const res = await fetch(BACKEND_URL + "/predict", {{
+            method: "POST",
+            headers: {{
+                "Content-Type": "application/json"
+            }},
+            body: JSON.stringify(payload)
+        }});
 
-        const tenure = parseInt(document.getElementById('tenure').value) || 0;
-        const charges = parseFloat(document.getElementById('charges').value) || 0;
-        const total_charges = parseFloat(document.getElementById('total_charges').value) || 0;
-        const calls = parseInt(document.getElementById('calls').value) || 0;
-        const contract = document.getElementById('contract').value;
-        const internet = document.getElementById('internet').value;
-        const payment = document.getElementById('payment').value;
-        const techSupport = document.getElementById('tech_support').value;
-        const security = document.getElementById('security').value;
-        const streaming = document.getElementById('streaming').value;
+           let data;
 
-        btnLoader.style.display = 'block';
-        btnText.innerText = 'Analyzing...';
-        predictBtn.style.opacity = '0.8';
-        errBox.style.display = 'none';
+try {
+    data = await res.json();
+} catch {
+    resultBox.innerHTML = "❌ Invalid response from backend";
+    return;
+}
 
-        // Show wake-up notice after 3 seconds if still loading (Render cold start)
-        const wakeTimer = setTimeout(() => {{ wakeNotice.style.display = 'block'; }}, 3000);
+if (!res.ok) {
+    resultBox.innerHTML = "❌ Backend error: " + (data.detail || "Unknown error");
+    return;
+}
 
-        let probPct = 0, riskLvl = "Low", isFallback = false;
+if (!data.churn_prediction && data.churn_prediction !== 0) {
+    resultBox.innerHTML = "❌ Invalid data format from backend";
+    return;
+}
 
-        const payload = {{
-            tenure, monthly_charges: charges, total_charges, support_calls: calls,
-            contract_type: contract, internet_service: internet, payment_method: payment,
-            tech_support: techSupport, online_security: security, streaming_services: streaming
-        }};
+resultBox.innerHTML = `
+    <b>Prediction:</b> ${data.churn_prediction} <br>
+    <b>Probability:</b> ${(data.churn_probability * 100).toFixed(2)}% <br>
+    <b>Risk:</b> ${data.risk_level}
+`;
 
-        try {{
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout for cold start
-            const timer = new Promise(r => setTimeout(r, 600));
-            
-            const fetchReq = fetch(BACKEND_URL + "/predict", {{
-                method: "POST",
-                headers: {{"Content-Type": "application/json"}},
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            }});
-
-            const results = await Promise.all([fetchReq, timer]);
-            clearTimeout(timeout);
-            const response = results[0];
-            if(!response.ok) throw new Error("Fetch failed");
-            const data = await response.json();
-
-            probPct = data.churn_probability * 100;
-            const rString = data.risk_level.charAt(0).toUpperCase() + data.risk_level.slice(1).toLowerCase();
-            if(uiCfg[rString]) riskLvl = rString;
-
-        }} catch(e) {{
-            console.warn("Backend unavailable, using fallback scoring", e);
-            isFallback = true;
-            let score = (calls * 8) + Math.max(0, 30 - tenure);
-            if(contract === "Month-to-month") score += 35;
-            else if(contract === "One year") score += 15;
-            else score += 5;
-            if(internet === "Fiber optic") score += 12;
-            if(payment === "Electronic check") score += 10;
-            if(techSupport === "No") score += 8; else score -= 5;
-            if(security === "No") score += 8; else score -= 5;
-            if(streaming === "Yes") score += 5;
-            if(charges > 80) score += 10;
-            probPct = Math.min(99, Math.max(0, score));
-            riskLvl = probPct >= 70 ? "High" : probPct >= 40 ? "Medium" : "Low";
-        }}
-
-        clearTimeout(wakeTimer);
-        wakeNotice.style.display = 'none';
-        btnLoader.style.display = 'none';
-        btnText.innerText = '⚡ Predict Churn Risk';
-        predictBtn.style.opacity = '1';
-        if(isFallback) errBox.style.display = 'flex';
-
-        renderResults(probPct, riskLvl, {{tenure, charges, total_charges, calls, contract, payment}});
+    }} catch (err) {{
+        resultBox.innerHTML = "❌ Backend error or wrong URL";
     }}
+}}
 
-    function renderResults(prob, risk, inputs) {{
-        document.getElementById('res-empty').style.display = 'none';
-        const rt = document.getElementById('res-content');
-        rt.style.display = 'block';
-        rt.style.opacity = '0';
-
-        const card = document.getElementById('result-card');
-        const cfg = uiCfg[risk];
-
-        card.style.background = `linear-gradient(135deg, var(--card-bg) 60%, ${{cfg.color}}0d)`;
-        card.style.borderColor = `${{cfg.color}}22`;
-        card.style.boxShadow = `0 0 48px ${{cfg.color}}11`;
-        document.getElementById('res-title').style.borderLeftColor = cfg.color;
-
-        const badge = document.getElementById('res-badge');
-        badge.innerText = cfg.label;
-        badge.style.color = cfg.color;
-        badge.style.borderColor = cfg.color;
-        badge.style.backgroundColor = `${{cfg.color}}1a`;
-
-        const dec = document.getElementById('res-decision');
-        dec.innerText = cfg.decision;
-        dec.className = "syne " + cfg.class;
-        document.getElementById('desc-prob').innerText = prob.toFixed(1) + "%";
-
-        let ctShort = inputs.contract === "One year" ? "1 Yr" : inputs.contract === "Two year" ? "2 Yr" : "M-to-M";
-        let payShort = inputs.payment === "Bank transfer" ? "Bank" : inputs.payment === "Electronic check" ? "eCheck" : inputs.payment === "Mailed check" ? "Mail" : "Card";
-
-        document.getElementById('chip-ten').innerText = `${{inputs.tenure}}M`;
-        document.getElementById('chip-chg').innerText = `$${{inputs.charges}}/mo`;
-        document.getElementById('chip-tot').innerText = `$${{inputs.total_charges}}`;
-        document.getElementById('chip-cll').innerText = `${{inputs.calls}} Call${{inputs.calls !== 1 ? 's' : ''}}`;
-        document.getElementById('chip-ctr').innerText = ctShort;
-        document.getElementById('chip-pay').innerText = payShort;
-
-        document.getElementById('strat-title').innerText = cfg.stratTitle;
-        document.getElementById('strat-title').style.color = cfg.color;
-        document.getElementById('res-strat').style.backgroundColor = `${{cfg.color}}0a`;
-        document.getElementById('strat-pills').innerHTML = cfg.pills.map(p =>
-            `<div class="step-pill"><span style="color:${{cfg.color}}"></span>${{p}}</div>`
-        ).join('');
-
-        document.getElementById('res-arc').style.stroke = cfg.color;
-        document.getElementById('res-arc').style.strokeDashoffset = "440";
-        setTimeout(() => {{ rt.style.opacity = '1'; }}, 50);
-        countUp('res-pct', prob, 1200, false);
-        setTimeout(() => {{
-            document.getElementById('res-arc').style.strokeDashoffset = 440 * (1 - prob / 100);
-        }}, 100);
-    }}
 </script>
+
 </body>
 </html>
-"""
-
-components.html(custom_app_html, height=1300, scrolling=True)
+""", height=800)
